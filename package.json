@@ -4,7 +4,8 @@
   "description": "O Sistema de Controle de Estoque para Pequenas Empresas é uma aplicação web desenvolvida para organizar o cadastro, a entrada, a saída e a consulta de produtos. O projeto busca substituir controles realizados por cadernos, anotações e planilhas desatualizadas.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/index.js"
   },
   "repository": {
     "type": "git",
