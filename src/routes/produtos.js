@@ -2,7 +2,7 @@ const express = require('express');
 
 const router = express.Router();
 
-// Dados temporários enquanto o banco de dados ainda não foi criado
+
 const produtos = [
   {
     id: 1,
@@ -18,14 +18,12 @@ const produtos = [
   }
 ];
 
-// GET /produtos
-// Retorna todos os produtos
+
 router.get('/', (req, res) => {
   return res.status(200).json(produtos);
 });
 
-// GET /produtos/:id
-// Retorna um produto de acordo com o ID informado
+
 router.get('/:id', (req, res) => {
   const id = Number(req.params.id);
 
@@ -40,8 +38,7 @@ router.get('/:id', (req, res) => {
   return res.status(200).json(produto);
 });
 
-// POST /produtos
-// Cadastra um novo produto
+
 router.post('/', (req, res) => {
   const { nome, quantidade, preco } = req.body;
 
