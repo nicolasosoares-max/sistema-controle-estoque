@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "description": "O Sistema de Controle de Estoque para Pequenas Empresas é uma aplicação web desenvolvida para organizar o cadastro, a entrada, a saída e a consulta de produtos. O projeto busca substituir controles realizados por cadernos, anotações e planilhas desatualizadas.",
   "main": "index.js",
- "scripts": {
+  "scripts": {
   "start": "node src/index.js",
-  "dev": "nodemon src/index.js"
+  "dev": "nodemon src/index.js",
+  "seed": "node src/scripts/criarUsuarios.js"
 },
   "repository": {
     "type": "git",
@@ -20,8 +21,11 @@
   },
   "homepage": "https://github.com/nicolasosoares-max/sistema-controle-estoque#readme",
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.22.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"
