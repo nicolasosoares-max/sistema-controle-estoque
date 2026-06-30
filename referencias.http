@@ -1,0 +1,95 @@
+@baseUrl = http://localhost:3000
+
+@tokenAdmin = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwibm9tZSI6IkFkbWluaXN0cmFkb3IgZG8gU2lzdGVtYSIsInBlcmZpbCI6ImFkbWluaXN0cmFkb3IiLCJpYXQiOjE3ODI4NTU5NzEsImV4cCI6MTc4Mjg2MzE3MX0.u8uFWBBOIDfqNKkl7B8dVQL5Elj1SKwa-eMl2mHFhTc
+@tokenOperador = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Miwibm9tZSI6Ik9wZXJhZG9yIGRvIEVzdG9xdWUiLCJwZXJmaWwiOiJvcGVyYWRvciIsImlhdCI6MTc4Mjg1NjA5MCwiZXhwIjoxNzgyODYzMjkwfQ.lXjSJxysiAClHwlewb6CcGaace9WjWlHN-6bhyzPOCI
+
+@produtoId = 1
+
+###
+# Verificar API
+GET {{baseUrl}}/
+
+###
+# RF001 — Login do administrador
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "email": "admin@estoque.com",
+  "senha": "Admin@123"
+}
+
+###
+# RF001 — Login do operador
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "email": "operador@estoque.com",
+  "senha": "Operador@123"
+}
+
+###
+# Segurança — acessar sem token
+# Resultado esperado: 401
+GET {{baseUrl}}/produtos
+
+###
+# RF003 — operador tentando cadastrar
+# Resultado esperado: 403
+POST {{baseUrl}}/produtos
+Authorization: Bearer {{tokenOperador}}
+Content-Type: application/json
+
+{
+  "nome": "Monitor",
+  "descricao": "Monitor LED",
+  "quantidade": 5,
+  "preco": 899.90,
+  "estoqueMinimo": 2
+}
+
+###
+# RF004 — administrador cadastrando
+# Resultado esperado: 201
+POST {{baseUrl}}/produtos
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "nome": "monitor",
+  "descricao": "Monitor LED",
+  "quantidade": 5,
+  "preco": 899.90,
+  "estoqueMinimo": 2
+}
+
+###
+# RF010 — listar produtos e quantidades
+# Resultado esperado: 200
+GET {{baseUrl}}/produtos
+Authorization: Bearer {{tokenAdmin}}
+
+###
+# Consultar um produto
+GET {{baseUrl}}/produtos/{{produtoId}}
+Authorization: Bearer {{tokenAdmin}}
+
+###
+# Atualizar produto
+PUT {{baseUrl}}/produtos/{{produtoId}}
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{
+  "nome": "Monitor Gamer",
+  "descricao": "Monitor atualizado",
+  "quantidade": 8,
+  "preco": 1099.90,
+  "estoqueMinimo": 3
+}
+
+###
+# Inativar produto
+DELETE {{baseUrl}}/produtos/{{produtoId}}
+Authorization: Bearer {{tokenAdmin}}
