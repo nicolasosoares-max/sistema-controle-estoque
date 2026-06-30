@@ -34,13 +34,13 @@ O sistema também deverá gerar alertas quando a quantidade de um produto ficar 
 * Express;
 * React;
 * PostgreSQL;
-* Prisma ORM;
+PostgreSQL com pacote pg
 * JWT;
 * Git e GitHub.
 
 ## Status do projeto
 
-Projeto em fase inicial de desenvolvimento.
+Projeto com API, persistência PostgreSQL, autenticação JWT e controle de perfis em desenvolvimento.
 
 ## Autor
 
