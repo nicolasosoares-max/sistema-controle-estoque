@@ -1,131 +1,252 @@
-// Dados temporários em memória.
-// Posteriormente serão substituídos pelo banco de dados.
+const pool = require('../config/database');
 
-const produtos = [
-  {
-    id: 1,
-    nome: 'Teclado',
-    quantidade: 10,
-    preco: 120
-  },
-  {
-    id: 2,
-    nome: 'Mouse',
-    quantidade: 15,
-    preco: 80
+async function listar(req, res) {
+  try {
+    const resultado = await pool.query(
+      `
+        SELECT
+          id,
+          nome,
+          descricao,
+          quantidade,
+          preco::FLOAT8 AS preco,
+          estoque_minimo AS "estoqueMinimo",
+          ativo
+        FROM produtos
+        WHERE ativo = TRUE
+        ORDER BY id
+      `
+    );
+
+    return res.status(200).json(resultado.rows);
+  } catch (erro) {
+    console.error('Erro ao listar produtos:', erro);
+
+    return res.status(500).json({
+      erro: 'Erro interno ao listar produtos.'
+    });
   }
-];
+}
 
-const listar = (req, res) => {
-  return res.status(200).json(produtos);
-};
-
-const buscarPorId = (req, res) => {
+async function buscarPorId(req, res) {
   const id = Number(req.params.id);
 
-  const produto = produtos.find((item) => item.id === id);
-
-  if (!produto) {
-    return res.status(404).json({
-      erro: 'Produto não encontrado'
+  if (!Number.isInteger(id)) {
+    return res.status(400).json({
+      erro: 'ID inválido.'
     });
   }
 
-  return res.status(200).json(produto);
-};
+  try {
+    const resultado = await pool.query(
+      `
+        SELECT
+          id,
+          nome,
+          descricao,
+          quantidade,
+          preco::FLOAT8 AS preco,
+          estoque_minimo AS "estoqueMinimo",
+          ativo
+        FROM produtos
+        WHERE id = $1
+          AND ativo = TRUE
+      `,
+      [id]
+    );
 
-const criar = (req, res) => {
-  const { nome, quantidade, preco } = req.body;
+    if (resultado.rowCount === 0) {
+      return res.status(404).json({
+        erro: 'Produto não encontrado.'
+      });
+    }
 
-  if (!nome || quantidade === undefined || preco === undefined) {
+    return res.status(200).json(resultado.rows[0]);
+  } catch (erro) {
+    console.error('Erro ao buscar produto:', erro);
+
+    return res.status(500).json({
+      erro: 'Erro interno ao buscar produto.'
+    });
+  }
+}
+
+async function criar(req, res) {
+  const {
+    nome,
+    descricao,
+    quantidade,
+    preco,
+    estoqueMinimo
+  } = req.body;
+
+  const quantidadeNumero = Number(quantidade);
+  const precoNumero = Number(preco);
+  const estoqueMinimoNumero = Number(estoqueMinimo);
+
+  if (
+    !nome ||
+    !Number.isFinite(quantidadeNumero) ||
+    !Number.isFinite(precoNumero) ||
+    !Number.isFinite(estoqueMinimoNumero)
+  ) {
     return res.status(400).json({
-      erro: 'Nome, quantidade e preço são obrigatórios'
+      erro: 'Nome, quantidade, preço e estoque mínimo são obrigatórios.'
     });
   }
 
   if (
-    typeof quantidade !== 'number' ||
-    quantidade < 0 ||
-    typeof preco !== 'number' ||
-    preco < 0
+    quantidadeNumero < 0 ||
+    precoNumero < 0 ||
+    estoqueMinimoNumero < 0
   ) {
     return res.status(400).json({
-      erro: 'Quantidade e preço devem ser números positivos'
+      erro: 'Os valores numéricos não podem ser negativos.'
     });
   }
 
-  const maiorId = produtos.reduce(
-    (maior, produto) => Math.max(maior, produto.id),
-    0
-  );
+  try {
+    const resultado = await pool.query(
+      `
+        INSERT INTO produtos (
+          nome,
+          descricao,
+          quantidade,
+          preco,
+          estoque_minimo
+        )
+        VALUES ($1, $2, $3, $4, $5)
+        RETURNING
+          id,
+          nome,
+          descricao,
+          quantidade,
+          preco::FLOAT8 AS preco,
+          estoque_minimo AS "estoqueMinimo",
+          ativo
+      `,
+      [
+        nome,
+        descricao || null,
+        quantidadeNumero,
+        precoNumero,
+        estoqueMinimoNumero
+      ]
+    );
 
-  const novoProduto = {
-    id: maiorId + 1,
-    nome,
-    quantidade,
-    preco
-  };
+    return res.status(201).json(resultado.rows[0]);
+  } catch (erro) {
+    console.error('Erro ao criar produto:', erro);
 
-  produtos.push(novoProduto);
+    return res.status(500).json({
+      erro: 'Erro interno ao criar produto.'
+    });
+  }
+}
 
-  return res.status(201).json(novoProduto);
-};
-
-const atualizar = (req, res) => {
+async function atualizar(req, res) {
   const id = Number(req.params.id);
 
-  const index = produtos.findIndex((item) => item.id === id);
-
-  if (index === -1) {
-    return res.status(404).json({
-      erro: 'Produto não encontrado'
-    });
-  }
-
-  const { nome, quantidade, preco } = req.body;
-
-  if (!nome || quantidade === undefined || preco === undefined) {
-    return res.status(400).json({
-      erro: 'Nome, quantidade e preço são obrigatórios'
-    });
-  }
-
-  if (
-    typeof quantidade !== 'number' ||
-    quantidade < 0 ||
-    typeof preco !== 'number' ||
-    preco < 0
-  ) {
-    return res.status(400).json({
-      erro: 'Quantidade e preço devem ser números positivos'
-    });
-  }
-
-  produtos[index] = {
-    id: produtos[index].id,
+  const {
     nome,
+    descricao,
     quantidade,
-    preco
-  };
+    preco,
+    estoqueMinimo
+  } = req.body;
 
-  return res.status(200).json(produtos[index]);
-};
+  if (!Number.isInteger(id)) {
+    return res.status(400).json({
+      erro: 'ID inválido.'
+    });
+  }
 
-const remover = (req, res) => {
+  try {
+    const resultado = await pool.query(
+      `
+        UPDATE produtos
+        SET
+          nome = $1,
+          descricao = $2,
+          quantidade = $3,
+          preco = $4,
+          estoque_minimo = $5,
+          atualizado_em = CURRENT_TIMESTAMP
+        WHERE id = $6
+          AND ativo = TRUE
+        RETURNING
+          id,
+          nome,
+          descricao,
+          quantidade,
+          preco::FLOAT8 AS preco,
+          estoque_minimo AS "estoqueMinimo",
+          ativo
+      `,
+      [
+        nome,
+        descricao || null,
+        Number(quantidade),
+        Number(preco),
+        Number(estoqueMinimo),
+        id
+      ]
+    );
+
+    if (resultado.rowCount === 0) {
+      return res.status(404).json({
+        erro: 'Produto não encontrado.'
+      });
+    }
+
+    return res.status(200).json(resultado.rows[0]);
+  } catch (erro) {
+    console.error('Erro ao atualizar produto:', erro);
+
+    return res.status(500).json({
+      erro: 'Erro interno ao atualizar produto.'
+    });
+  }
+}
+
+async function remover(req, res) {
   const id = Number(req.params.id);
 
-  const index = produtos.findIndex((item) => item.id === id);
-
-  if (index === -1) {
-    return res.status(404).json({
-      erro: 'Produto não encontrado'
+  if (!Number.isInteger(id)) {
+    return res.status(400).json({
+      erro: 'ID inválido.'
     });
   }
 
-  produtos.splice(index, 1);
+  try {
+    const resultado = await pool.query(
+      `
+        UPDATE produtos
+        SET
+          ativo = FALSE,
+          atualizado_em = CURRENT_TIMESTAMP
+        WHERE id = $1
+          AND ativo = TRUE
+        RETURNING id
+      `,
+      [id]
+    );
 
-  return res.status(204).send();
-};
+    if (resultado.rowCount === 0) {
+      return res.status(404).json({
+        erro: 'Produto não encontrado.'
+      });
+    }
+
+    return res.status(204).send();
+  } catch (erro) {
+    console.error('Erro ao remover produto:', erro);
+
+    return res.status(500).json({
+      erro: 'Erro interno ao remover produto.'
+    });
+  }
+}
 
 module.exports = {
   listar,
